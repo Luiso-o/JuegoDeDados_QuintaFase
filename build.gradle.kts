@@ -48,6 +48,16 @@ dependencies {
 
 	// https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305
 	implementation("com.google.code.findbugs:jsr305:3.0.2")
+
+	//Security
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	testImplementation("org.springframework.security:spring-security-test")
+
+	//Json Web Token
+	implementation("io.jsonwebtoken:jjwt-api:0.11.2")
+	implementation("io.jsonwebtoken:jjwt-impl:0.11.2")
+	implementation("io.jsonwebtoken:jjwt-jackson:0.11.2")
+
 }
 
 tasks.withType<Test> {

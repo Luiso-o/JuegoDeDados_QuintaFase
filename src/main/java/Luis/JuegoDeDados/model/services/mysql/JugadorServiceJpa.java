@@ -2,20 +2,22 @@ package Luis.JuegoDeDados.model.services.mysql;
 
 import Luis.JuegoDeDados.exceptions.EmptyPlayersListException;
 import Luis.JuegoDeDados.exceptions.PlayerNotFoundException;
+import Luis.JuegoDeDados.model.dto.mysql.AuthResponseMysql;
 import Luis.JuegoDeDados.model.dto.mysql.JugadorDtoJpa;
+import Luis.JuegoDeDados.model.entity.Role;
 import Luis.JuegoDeDados.model.entity.mysql.JugadorEntityJpa;
 import Luis.JuegoDeDados.model.entity.mysql.PartidaEntityJpa;
 import Luis.JuegoDeDados.model.repository.mysql.JugadorRepositoryJpa;
 import Luis.JuegoDeDados.model.repository.mysql.PartidaRepositoryJpa;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.webjars.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -24,42 +26,52 @@ import java.util.stream.Collectors;
 public class JugadorServiceJpa {
 
     @Autowired
-    private JugadorRepositoryJpa jugadorRepositoryJpa;
+    private final JugadorRepositoryJpa jugadorRepositoryJpa;
     @Autowired
-    private PartidaRepositoryJpa partidaRepositoryJpa;
+    private final PartidaRepositoryJpa partidaRepositoryJpa;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtServiceMysql jwtService;
 
     /**
-     * Crea un nuevo jugador en el sistema.
-     * <p>
-     * Este método permite la creación de un nuevo jugador en el sistema con el nombre proporcionado.
-     * Si el nombre es nulo o está en blanco, se asignará el nombre "Anónimo" al jugador creado.
+     * Registra un nuevo usuario en el sistema.
      *
-     * @param nombre El nombre del jugador. Puede ser nulo o en blanco.
-     * @return Un objeto JugadorDtoJpa que representa al jugador recién creado.
+     * @param nombre El nombre del usuario a registrar.
+     * @param email El correo electrónico del usuario a registrar.
+     * @param password La contraseña del usuario a registrar.
+     * @return Una instancia de AuthResponse que contiene el token generado para el usuario registrado.
      */
-    public JugadorDtoJpa crearJugador(String nombre){
-        JugadorEntityJpa jugador = JugadorEntityJpa.builder()
+    public AuthResponseMysql register(String nombre, String email, String password){
+        JugadorEntityJpa usuario = JugadorEntityJpa.builder()
+                .email(email)
+                .password(passwordEncoder.encode(password))
                 .nombre(filtraNombre(nombre))
+                .porcentajeExito(0)
+                .role(Role.USER)
                 .build();
-        JugadorEntityJpa jugadorCreado = jugadorRepositoryJpa.save(jugador);
-        return pasarEntidadADto(jugadorCreado);
+
+        jugadorRepositoryJpa.save(usuario);
+
+        return AuthResponseMysql.builder()
+                .token(jwtService.getToken(usuario))
+                .build();
     }
 
     /**
-     * Busca un jugador en la base de datos por su ID.
+     * Busca un jugador por su ID en la base de datos.
      *
-     * @param id El ID del jugador que se desea buscar.
-     * @return El objeto JugadorEntityJpa correspondiente al ID proporcionado.
-     * @throws PlayerNotFoundException Si no se encuentra ningún jugador con el ID proporcionado.
+     * @param id El ID del jugador a buscar.
+     * @return El jugador correspondiente al ID proporcionado.
+     * @throws NotFoundException Si la lista de jugadores está vacía.
+     * @throws RuntimeException Si no se encuentra un jugador con el ID proporcionado.
      */
-    public JugadorEntityJpa buscarJugadorPorId(Long id) {
-        Optional<JugadorEntityJpa> jugadorOptional = jugadorRepositoryJpa.findById(id);
+    public JugadorEntityJpa buscarJugadorPorId(Long id){
+        List<JugadorEntityJpa> misJugadores = jugadorRepositoryJpa.findAll();
 
-        if (jugadorOptional.isPresent()) {
-            return jugadorOptional.get();
-        } else {
-            throw new PlayerNotFoundException(id);
+        if (misJugadores.isEmpty()) {
+            throw new EmptyPlayersListException();
         }
+        return jugadorRepositoryJpa.findById(id)
+                .orElseThrow(() -> new PlayerNotFoundException(id));
     }
 
     /**
@@ -92,7 +104,7 @@ public class JugadorServiceJpa {
      * Retorna una lista de todos los jugadores en forma de DTO.
      *
      * @return Una lista de objetos JugadorDtoJpa que representan a todos los jugadores.
-     * @throws RuntimeException Si la lista de jugadores está vacía.
+     * @throws NotFoundException Si la lista de jugadores está vacía.
      */
     public List<JugadorDtoJpa> listaJugadores() {
         List<JugadorEntityJpa> jugadores = jugadorRepositoryJpa.findAll();
@@ -122,7 +134,7 @@ public class JugadorServiceJpa {
      * Obtiene una lista de los peores jugadores basados en su porcentaje de éxito.
      *
      * @return Una lista de objetos JugadorDtoJpa que representan a los peores jugadores.
-     * @throws RuntimeException Si no se encuentran jugadores en la base de datos.
+     * @throws NotFoundException Si no se encuentran jugadores en la base de datos.
      */
     public List<JugadorDtoJpa> peoresJugadores(){
         List<JugadorEntityJpa> todosLosJugadores = jugadorRepositoryJpa.findAll();
@@ -130,7 +142,7 @@ public class JugadorServiceJpa {
         int porcentajeMasBajo = 100; //Partimos con el porcentaje más alto
 
         if (todosLosJugadores.isEmpty()) {
-            throw  new EmptyPlayersListException();
+            throw new EmptyPlayersListException();
         }
 
         for (JugadorEntityJpa jugador : todosLosJugadores) {
@@ -208,6 +220,7 @@ public class JugadorServiceJpa {
     }
 
     /**
+
      * Convierte una entidad JugadorEntityJpa en un DTO JugadorDtoJpa.
      * <p>
      * Esta función realiza la conversión de una entidad JugadorEntityJpa a un DTO JugadorDtoJpa,

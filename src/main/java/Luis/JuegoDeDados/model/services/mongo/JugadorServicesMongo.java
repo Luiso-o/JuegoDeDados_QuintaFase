@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.webjars.NotFoundException;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,7 @@ public class JugadorServicesMongo {
      */
     public JugadorDtoMongo crearJugador(String nombre){
         JugadorEntityMongo jugador = JugadorEntityMongo.builder()
+                .id(asignarId())
                 .nombre(filtraNombre(nombre))
                 .build();
         JugadorEntityMongo jugadorCreado = jugadorRepositoryMongo.save(jugador);
@@ -247,4 +249,26 @@ public class JugadorServicesMongo {
             return "Anónimo";
         }
     }
+
+    /**
+     * Obtiene el siguiente ID para un jugador en la base de datos.
+     *
+     * @return El siguiente ID disponible como cadena.
+     */
+    private String asignarId() {
+        List<JugadorEntityMongo> jugadores = jugadorRepositoryMongo.findAll();
+
+        if (jugadores.isEmpty()) {
+            return "1";
+        }
+
+        String maxId = jugadores.stream()
+                .map(JugadorEntityMongo::getId)
+                .max(Comparator.naturalOrder())
+                .orElse("0");
+
+        int nextId = Integer.parseInt(maxId) + 1;
+        return String.valueOf(nextId);
+    }
+
 }
