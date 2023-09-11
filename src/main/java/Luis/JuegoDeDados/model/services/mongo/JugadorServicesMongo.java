@@ -1,12 +1,15 @@
 package Luis.JuegoDeDados.model.services.mongo;
 
+import Luis.JuegoDeDados.model.dto.mongo.AuthResponseMongo;
 import Luis.JuegoDeDados.model.dto.mongo.JugadorDtoMongo;
+import Luis.JuegoDeDados.model.entity.Role;
 import Luis.JuegoDeDados.model.entity.mongo.JugadorEntityMongo;
 import Luis.JuegoDeDados.model.entity.mongo.PartidaEntityMongo;
 import Luis.JuegoDeDados.model.repository.mongo.JugadorRepositoryMongo;
 import Luis.JuegoDeDados.model.repository.mongo.PartidaRepositoryMongo;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.webjars.NotFoundException;
@@ -23,26 +26,36 @@ public class JugadorServicesMongo {
 
     @Autowired
     private JugadorRepositoryMongo jugadorRepositoryMongo;
-
     @Autowired
     private PartidaRepositoryMongo partidaRepositoryMongo;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private JwtServiceMongo jwtService;
 
     /**
-     * Crea un nuevo jugador en el sistema.
-     * <p>
-     * Este método permite la creación de un nuevo jugador en el sistema con el nombre proporcionado.
-     * Si el nombre es nulo o está en blanco, se asignará el nombre "Anónimo" al jugador creado.
+     * Registra un nuevo usuario en el sistema.
      *
-     * @param nombre El nombre del jugador. Puede ser nulo o en blanco.
-     * @return Un objeto JugadorDtoMongo que representa al jugador recién creado.
+     * @param nombre El nombre del usuario a registrar.
+     * @param email El correo electrónico del usuario a registrar.
+     * @param password La contraseña del usuario a registrar.
+     * @return Una instancia de AuthResponse que contiene el token generado para el usuario registrado.
      */
-    public JugadorDtoMongo crearJugador(String nombre){
-        JugadorEntityMongo jugador = JugadorEntityMongo.builder()
+    public AuthResponseMongo register(String nombre, String email, String password){
+        JugadorEntityMongo usuario = JugadorEntityMongo.builder()
                 .id(asignarId())
+                .email(email)
+                .password(passwordEncoder.encode(password))
                 .nombre(filtraNombre(nombre))
+                .porcentajeExito(0)
+                .role(Role.USER)
                 .build();
-        JugadorEntityMongo jugadorCreado = jugadorRepositoryMongo.save(jugador);
-        return pasarEntidadADto(jugadorCreado);
+
+        jugadorRepositoryMongo.save(usuario);
+
+        return AuthResponseMongo.builder()
+                .token(jwtService.getToken(usuario))
+                .build();
     }
 
     /**

@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -35,9 +36,13 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth-> auth
-                        .requestMatchers("v3/api-docs/**",
-                                "swagger-ui/**","auth/**","auth/register/**",
-                                "auth/login/**").permitAll()
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/v3/api-docs/**"),
+                                new AntPathRequestMatcher("/swagger-ui/**"),
+                                new AntPathRequestMatcher("/authMysql/register/**"),
+                                new AntPathRequestMatcher("/authMysql/login/**"),
+                                new AntPathRequestMatcher("/authMongo/register/**"),
+                                new AntPathRequestMatcher("/authMongo/login/**")).permitAll()
                         .anyRequest().authenticated()
                 )
 
