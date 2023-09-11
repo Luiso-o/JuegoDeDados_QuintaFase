@@ -1,6 +1,6 @@
-# JuegoDeDados_Cuarta Fase
+# JuegoDeDados_QuintaFase
 ApiRest Crud, Juego de dados, persistiendo base de datos relacionales (Mysql) y no relacionales (mongoDB)
-@Gradle @Workbench @MongoDB @Swuagger 
+@Gradle @Workbench @MongoDB @Swuagger @Security @JWT
 
 El juego de dados se juega con dos dados. En caso de que el resultado de la suma de ambos dados sea menor o igual a 7, la partida será ganada, si no es perdida. Un jugador/a puede ver un listado de todas las tiradas que ha realizado y el porcentaje de éxito.
 
@@ -39,6 +39,7 @@ URL's:
 - Fase 5
 Diseña y modifica el proyecto diversificando la persistencia para que utilice dos esquemas de base de datos a la vez, MySQL y Mongo.
 
-API-JUEGO DE DADOS
+JUEGO DE DADOS
+API-![Swagger-Autenticacion](https://github.com/Luiso-o/JuegoDeDados_QuintaFase/assets/128043647/6f8ca2f9-2412-4a5f-9502-52a5b58789eb)
 
-![CapturaApiSwagger](https://github.com/Luiso-o/JuegoDeDados_QuintaFase/assets/128043647/f0e98598-739c-436f-91a9-cd5974aa13af)
+
